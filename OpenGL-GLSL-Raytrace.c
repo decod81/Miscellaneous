@@ -1,6 +1,8 @@
-/* gcc OpenGL-GLSL-Raytrace.c -lGL -lSDL */
+/* gcc OpenGL-GLSL-Raytrace.c -lGL -lSDL2  (-lOpenGL32) */
 #include <GL/gl.h>
-#include <SDL/SDL.h>
+#include <GL/glext.h>
+#include <GL/wglext.h>
+#include <SDL2/SDL.h>
 
 char *d =
   "float t = gl_Color.x*1000.;"
@@ -29,10 +31,29 @@ char *d =
   "  }"
   "}";
 
-main(c) {
-  SDL_Event e;
-  SDL_SetVideoMode(512, 512, 0, SDL_OPENGL);
-  glUseProgram(glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, &d));
+int WinMain(HINSTANCE hInstance, HINSTANCE   hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+	int a, b, c;
+	SDL_Event event;
+	SDL_Window *window;
+	SDL_GLContext context;
+
+	SDL_Init(SDL_INIT_VIDEO);
+	window = SDL_CreateWindow("OpenGL-Raytrace", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_OPENGL);
+	context = SDL_GL_CreateContext(window);
+ 	SDL_GL_SetSwapInterval(1);
+ 	
+	// glUseProgram(glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, &d));
+
+	b = (wglGetProcAddress("glCreateShaderProgramv"))(GL_FRAGMENT_SHADER, 1, &d);
+	(wglGetProcAddress("glUseProgram"))(b);
+	
+	// a = glCreateShader(GL_FRAGMENT_SHADER);
+	// b = glCreateProgram();
+	// glShaderSource(a, 1, &d, 0);
+	// glCompileShader(a);
+	// glAttachShader(b, a);
+	// glLinkProgram(b);
+	// glUseProgram(b);
 
 /*
   c = 0;
@@ -41,11 +62,11 @@ main(c) {
   char filename[80];
 */
 
-  while(e.type!=SDL_QUIT) {
-    glColor3us(c++, 0, 0);
-    glRecti(-1, -1, 1, 1);
-    SDL_GL_SwapBuffers();
-    SDL_PollEvent(&e);
+	while(1) {
+		glColor3us(c++, 0, 0);
+		glRecti(-1, -1, 1, 1);
+		SDL_GL_SwapWindow(window);
+		if(SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
 /*
     sprintf(filename, "%04d.ppm", c);
     FILE *f = fopen(filename, "w");
@@ -61,5 +82,7 @@ main(c) {
 
     }
 */
-  }
+	}
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 }
