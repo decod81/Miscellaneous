@@ -1,0 +1,91 @@
+<script type="text/javascript">
+window.onload = function() {
+  var  t = document.getElementById("a").getContext("2d");
+  var  g = t.createImageData(128, 128);
+  var  N = 128;
+  var  f = new Array(N*N);
+  var  p = new Array(N*N);
+  var  u = new Array(N*N);
+  var  v = new Array(N*N);
+  var ux = new Array(N*N);
+  var vx = new Array(N*N);
+  var uy = new Array(N*N);
+  var vy = new Array(N*N);
+  var u2 = new Array(N*N);
+  var v2 = new Array(N*N);
+  var us = new Array(N*N);
+  var vs = new Array(N*N);
+  var px = new Array(N*N);
+  var py = new Array(N*N);
+
+  function r(tframe) {
+    var a, b, x, y;
+
+    for(y=-10; y<10; y++)
+      for(x=-10; x<10; x++)
+        u[0.75*N+x+(N/2+y)*N] = 0.15;
+
+    for(y=1; y<N-1; y++)
+      for(x=1; x<N-1; x++) {
+        ux[x+y*N] = 0.50*(u[(x+1)+y*N] -                u[(x-1)+y*N]);
+        vx[x+y*N] = 0.50*(v[(x+1)+y*N] -                v[(x-1)+y*N]);
+        uy[x+y*N] = 0.50*(u[x+(y+1)*N] -                u[x+(y-1)*N]);
+        vy[x+y*N] = 0.50*(v[x+(y+1)*N] -                v[x+(y-1)*N]);
+        u2[x+y*N] = 0.25*(u[(x+1)+y*N] - 2.0*u[x+y*N] + u[(x-1)+y*N]);
+        v2[x+y*N] = 0.25*(v[(x+1)+y*N] - 2.0*v[x+y*N] + v[(x-1)+y*N]);
+        u2[x+y*N]+= 0.25*(u[x+(y+1)*N] - 2.0*u[x+y*N] + u[x+(y-1)*N]);
+        v2[x+y*N]+= 0.25*(v[x+(y+1)*N] - 2.0*v[x+y*N] + v[x+(y-1)*N]);
+      }
+
+    for(x=0; x<N*N; x++) {
+      us[x] = u[x] + u[x]*ux[x] + v[x]*uy[x] + u2[x]/20.0 - px[x]/20.0 + 0.00000;
+      vs[x] = v[x] + u[x]*vx[x] + v[x]*vy[x] + v2[x]/20.0 - py[x]/20.0 - 0.00000;
+    }
+
+    for(y=1; y<N-1; y++)
+      for(x=1; x<N-1; x++) {
+        f[x+y*N] = 0.5*(us[(x+1)+y*N] - us[(x-1)+y*N] + vs[x+(y+1)*N] - vs[x+(y-1)*N]);
+        p[x+y*N] = 0.25*(p[(x+1)+y*N] + p[x+(y+1)*N] + p[(x-1)+y*N] + p[x+(y-1)*N] - f[x+y*N]);
+    }
+
+    for(y=1; y<N-1; y++)
+      for(x=1; x<N-1; x++) {
+        px[x+y*N] = 0.5*(p[(x+1)+y*N] - p[(x-1)+y*N]);
+        py[x+y*N] = 0.5*(p[x+(y+1)*N] - p[x+(y-1)*N]);
+         u[x+y*N] = us[x+y*N] - px[x+y*N];
+         v[x+y*N] = vs[x+y*N] - py[x+y*N];
+      }
+
+    window.requestAnimationFrame(r);
+    for(x=0; x<N*N; x++) {
+      a = 4*x;
+      b = 1500*Math.sqrt(u[x]*u[x] + v[x]*v[x]);
+      if(b>255) b = 255;
+      g.data[a] = b;
+      g.data[a+1] = b;
+      g.data[a+2] = b;
+      g.data[a+3] = 255;
+    }
+    t.putImageData(g, 0, 0);
+  }
+  for(x=0; x<128*128; x++) {
+     f[x] = 0;
+     p[x] = 0;
+     u[x] = 0;
+     v[x] = 0;
+    ux[x] = 0;
+    uy[x] = 0;
+    vx[x] = 0;
+    vy[x] = 0;
+    u2[x] = 0;
+    v2[x] = 0;
+    us[x] = 0;
+    vs[x] = 0;
+    px[x] = 0;
+    py[x] = 0;
+  }
+  window.requestAnimationFrame(r);
+
+};
+</script>
+<canvas id="a" width="128" height="128" style=width:12cm;height:12cm></canvas>
