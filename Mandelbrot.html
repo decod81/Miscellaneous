@@ -1,0 +1,62 @@
+<script type="text/javascript">
+var gl;
+var canvas;
+var t;
+var loc;
+
+function render() {
+	gl.uniform1f(loc, t);
+	t += 1.0;
+	requestAnimationFrame(render, canvas);
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function init() {
+	t = 0.0;
+	canvas = document.getElementById("w");
+	gl = canvas.getContext("experimental-webgl");
+	var prog = gl.createProgram();
+
+	var s = gl.createShader(gl.VERTEX_SHADER);
+	gl.shaderSource(s, "attribute vec3 pos;void main() {gl_Position = vec4(pos, 1.);}");
+	gl.compileShader(s);
+	gl.attachShader(prog, s);
+
+        s = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(s, "precision mediump float;"+
+	"uniform float t;"+
+	"void main() {"+
+		"float x, y;"+
+		"vec2 c = (gl_FragCoord.xy/vec2(512.,512.) - .5)*(2. + .4*cos(t/5.)), z = c;"+
+		"gl_FragColor = vec4(0., 0., 0., 1.);"+
+		"for(int n=0;n<128;n++) {"+
+			"x = z.x*z.x - z.y*z.y + c.x;"+
+			"y = 2.*z.x*z.y + c.y;"+
+			"if(x*x+y*y>4.) {"+
+				"gl_FragColor = vec4((float(n) + 1. - log(log(sqrt(x*x+y*y)))/log(2.) )/24., 0., 0., 1.);"+
+				"break;"+
+			"}"+
+			"z.x = x;"+
+			"z.y = y;"+
+		"}"+
+	"}");
+        gl.compileShader(s);
+        gl.attachShader(prog, s);
+
+        gl.linkProgram(prog);
+	gl.useProgram(prog);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, 1, 1, -1, 1, -1, -1]), gl.STATIC_DRAW);
+	attr = gl.getAttribLocation(prog, "pos");
+	gl.enableVertexAttribArray(attr);
+	gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0);
+
+	loc = gl.getUniformLocation(prog, 't');
+
+	render();
+}
+setTimeout(init, 100);
+
+</script>
+<canvas id="w" width="512" height="512"></canvas>
