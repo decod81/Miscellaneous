@@ -1,12 +1,11 @@
-module test(clock, led, out0i, out1i, out0q, out1q);
+module test(clock, led, HS, VS, VAL, OUTA, OUTB, OUTC, OUTD);
 
 input clock;
 output [2:0] led;
-output out0i;
-output out1i;
-output out0q;
-output out1q;
+output HS, VS, VAL;
+output OUTA, OUTB, OUTC, OUTD;
 
+/* VGA related */
 reg vga_HS, vga_VS;
 reg [9:0] CounterX;
 reg [8:0] CounterY;
@@ -14,12 +13,22 @@ reg [9:0] temporary;
 reg [9:0] cntx;
 reg [9:0] cnty;
 reg pixvalue;
-
 reg [7:0] fnt[6399:0];
-initial $readmemh("FPGA-fnt.hex", fnt);
+initial $readmemh("d:/clean/FPGA/Cyclone2/fnt.hex", fnt);
 
+/* DAC related */
+reg [31:0] cnt;
+
+/* PLL2 related */
+reg [23:0] cnt2;
+
+/* VGA and PLL1 related */
 always @(posedge pll_clock)
-begin	
+begin
+	/* DAC related */
+	cnt <= cnt + 1;
+	
+	/* VGA related */
 	CounterX <= CounterX + 1;
 	
 	if(CounterX==800)
@@ -46,15 +55,64 @@ begin
 		if(CounterX<640) pixvalue <= (fnt[CounterX+CounterY*760]>1);
 end
 
-assign out0i = ~vga_HS;
-assign out1i = ~vga_VS;
-assign out0q = pixvalue;
+/* PLL2: currently set to 105 MHz, max 500 MHz */
+reg outa;
+reg [14:0] val;
+reg [7:0] snd0;
+reg [31:0] snd;
 
-// assign led = cnt2[23:21];
+always @(posedge pll2_clock)
+begin
+	cnt2 <= cnt2 + 1;
+	
+	/* a kind of radio transmitter */
+	val <= val + 1;
+	snd = cnt >> 16;	
+	snd0 = snd&snd%255-(snd*3&snd>>13&snd>>6);
+	// snd0 = (snd*5&snd>>7)|(snd*3&snd>>10);
+	if((val[0]==0) & (snd0>1))
+		outa = 0;
+	else
+		outa = 1;
+end
+
+/* VGA related */
+assign HS = ~vga_HS;
+assign VS = ~vga_VS;
+assign VAL = pixvalue;
+
+/* DAC related */
+assign OUTC = cnt[5];
+assign OUTA = cnt[6];
+assign OUTB = cnt[7];
+
+/* PLL2 related */
+// assign OUTD = cnt2[10];
+assign OUTD = outa; // radio
+
+/* LED related */
+assign led = cnt[23:21];
 
 altpll0 altpll0 (
 	 .inclk0(clock),
-	 .c0(pll_clock)
+	 .c0(pll_clock),
+	 .c1(pll2_clock)
  );
 
+ /* LVDS related
+ module test(clock, txout, txoutclock);
+	input clock;
+	output txout;
+	output txoutclock;
+	reg [7:0] txin;
+
+	always @ (posedge clock)
+	begin
+		txin <= txin + 8;
+	end
+	
+	lvds lvds(.tx_in(txin), .tx_inclock(clock), .tx_out(txout), .tx_outclock(txoutclock));
+endmodule
+ */
+ 
 endmodule
