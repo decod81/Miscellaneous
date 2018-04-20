@@ -1,12 +1,25 @@
 /* Compilation: gcc ccpu.c -o ccpu -lSDL2main -lSDL2
- * Example program: fill the screen
+ * Example program: fill the screen with random (xorshift32) dots
  *
- * MOV A, 255
+ * MOV A, 1
  * MOV B, 255
  * MOV C, 1
+ * MOV D, 13
+ * MOV E, 17
+ * MOV F, 5
+ * MOV H, 256
+ * MOV I, 76800
+ * SHL G, A, D
+ * XOR A, A, G
+ * SHR G, A, E
+ * XOR A, A, G
+ * SHL G, A, F
+ * XOR A, A, G
+ * MOD G, A, H
  * ADD B, B, C
  * STO B, A
- * JMP 6
+ * JL  B, I, 16
+ * END
  */
 
 #include <math.h>
@@ -46,6 +59,9 @@
 #define DIV 20
 #define MOD 21
 
+/* Debug */
+#define END 255
+
 int isOpcode(char *opc, char *cmp) {
   int i, j=0;
   for(i=0; i<3; i++)
@@ -58,10 +74,10 @@ int isOpcode(char *opc, char *cmp) {
 }
 
 int assemble() {
-  FILE *in = fopen("src.asm", "r");
+  FILE *in = fopen("xorshift.asm", "r");
   FILE *out = fopen("ram.bin", "wb");
   unsigned char buf[256], nbuf[64], op[3], regs[3];
-  int i, j, k;
+  int i, j, k, line = 0;
 
   printf("\nCompiling src.asm...\n\n");
 
@@ -95,114 +111,141 @@ int assemble() {
       i = JMP<<24;
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JMP %d\n", j);
+      printf("%d\tJMP %d\n", line, j);
+      line += 2;
     }
     if(isOpcode(op, "JE ")) {
       i = (JE<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JE  %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJE  %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "JNE")) {
       i = (JNE<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JNE %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJNE %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "JG ")) {
       i = (JG<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JG  %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJG  %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "JGE")) {
       i = (JGE<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JGE %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJGE %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "JL ")) {
       i = (JL<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JL  %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJL  %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "JLE")) {
       i = (JLE<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("JLE %c, %c, %d\n", regs[0]+'A', regs[1]+'A', j);
+      printf("%d\tJLE %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "MOV")) {
       i = (MOV<<24)+(regs[0]<<16);
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
-      printf("MOV %c, %d\n", regs[0]+'A', j);
+      printf("%d\tMOV %c, %d\n", line, regs[0]+'A', j);
+      line += 2;
     }
     if(isOpcode(op, "CPY")) {
       i = (CPY<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
-      printf("CPY %c, %c\n", regs[0]+'A', regs[1]+'A');
+      printf("%d\tCPY %c, %c\n", line, regs[0]+'A', regs[1]+'A');
+      line += 1;
     }
     if(isOpcode(op, "LDA")) {
       i = (LDA<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
-      printf("LDA %c, %c\n", regs[0]+'A', regs[1]+'A');
+      printf("%d\tLDA %c, %c\n", line, regs[0]+'A', regs[1]+'A');
+      line += 1;
     }
     if(isOpcode(op, "STO")) {
       i = (STO<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
-      printf("STO %c, %c\n", regs[0]+'A', regs[1]+'A');
+      printf("%d\tSTO %c, %c\n", line, regs[0]+'A', regs[1]+'A');
+      line += 1;
     }
     if(isOpcode(op, "SHL")) {
       i = (SHL<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("SHL %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tSHL %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "SHR")) {
       i = (SHR<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("SHR %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tSHR %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "NOT")) {
       i = (NOT<<24)+(regs[0]<<16)+(regs[1]<<8);
       fwrite(&i, 4, 1, out);
-      printf("NOT %c, %c\n", regs[0]+'A', regs[1]+'A');
+      printf("%d\tNOT %c, %c\n", line, regs[0]+'A', regs[1]+'A');
+      line += 1;
     }
     if(isOpcode(op, "AND")) {
       i = (AND<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("AND %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tAND %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "OR ")) {
       i =  (OR<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("OR  %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tOR  %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "XOR")) {
       i = (XOR<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("XOR %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tXOR %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "ADD")) {
       i = (ADD<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("ADD %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tADD %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "MUL")) {
       i = (MUL<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("MUL %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tMUL %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "DIV")) {
       i = (DIV<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("DIV %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tDIV %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
     }
     if(isOpcode(op, "MOD")) {
       i = (MOD<<24)+(regs[0]<<16)+(regs[1]<<8)+regs[2];
       fwrite(&i, 4, 1, out);
-      printf("MOD %c, %c, %c\n", regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      printf("%d\tMOD %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
+      line += 1;
+    }
+    if(isOpcode(op, "END")) {
+      i = (END<<24);
+      fwrite(&i, 4, 1, out);
+      printf("%d\tEND\n", line);
+      line += 1;
     }
   }
   fflush(out);
@@ -211,7 +254,6 @@ int assemble() {
   int len = ftell(out);
   printf("\nProgram length %d bytes\n\n", len);
   fclose(out);
-  exit(0);
 }
 
 int main(int argc, char* args[]) {
@@ -222,8 +264,9 @@ int main(int argc, char* args[]) {
   SDL_Window *window;
   SDL_Surface *surface;
 
-  if(argc>1)
-    assemble();
+  assemble();
+  printf("Press enter to execute.\n");
+  getch();
 
   SDL_Init(SDL_INIT_VIDEO);
   window = SDL_CreateWindow("CCPU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 240, 0);
@@ -256,9 +299,9 @@ int main(int argc, char* args[]) {
     /* JE A, B, addr32 (if A==B jump to addr32) */
     if(OP==JE) {
       if(reg[a]==reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JE  %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -267,9 +310,9 @@ int main(int argc, char* args[]) {
     /* JNE A, B, addr32 */
     if(OP==JNE) {
       if(reg[a]!=reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JNE %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -278,9 +321,9 @@ int main(int argc, char* args[]) {
     /* JG A, B, addr32 */
     if(OP==JG) {
       if(reg[a]>reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JG  %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -289,9 +332,9 @@ int main(int argc, char* args[]) {
     /* JGE A, B, addr32 */
     if(OP==JGE) {
       if(reg[a]>=reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JGE %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -300,9 +343,9 @@ int main(int argc, char* args[]) {
     /* JL A, B, addr32 */
     if(OP==JL) {
       if(reg[a]<reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JL  %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -311,9 +354,9 @@ int main(int argc, char* args[]) {
     /* JLE A, B, addr32 */
     if(OP==JLE) {
       if(reg[a]<=reg[b])
-	pc = data;
+		pc = data;
       else
-	pc = pc + 2;
+		pc = pc + 2;
 #ifdef DEBUG
       printf("JLE %c, %c, %d\n", a+'A', b+'A', data);
 #endif
@@ -444,6 +487,10 @@ int main(int argc, char* args[]) {
       printf("MOD %c, %c, %c\n", a+'A', b+'A', c+'A');
 #endif
     }
+    
+    if(OP==END) {
+    	break;
+	}
 
     OP = (mem[pc]&0b11111111000000000000000000000000)>>24;
     a = (mem[pc]&0b00000000111111110000000000000000)>>16;
@@ -451,17 +498,19 @@ int main(int argc, char* args[]) {
     c = (mem[pc]&0b00000000000000000000000011111111);
     data = mem[pc+1];
 
-    if(!(t%1000)) {
+    if(!(t%320)) {
       for(i=0; i<320*240; i++) {
-	p = (int *)surface->pixels+i;
-	col = mem[i];
-	*p = 65536*col + 256*col + col;
+		p = (int *)surface->pixels+i;
+		col = mem[i];
+		*p = 65536*col + 256*col + col;
       }
       SDL_UpdateWindowSurface(window);
     }
     if(SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
   }
   free(mem);
+  printf("Program complete.");
+  getch();
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
