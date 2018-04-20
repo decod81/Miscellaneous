@@ -59,9 +59,6 @@
 #define DIV 20
 #define MOD 21
 
-/* Debug */
-#define END 255
-
 int isOpcode(char *opc, char *cmp) {
   int i, j=0;
   for(i=0; i<3; i++)
@@ -72,6 +69,28 @@ int isOpcode(char *opc, char *cmp) {
   else
     return 0;
 }
+
+char *prg = 
+"MOV A, 1     ;"
+"MOV B, 255   ;"
+"MOV C, 1     ;"
+"MOV D, 13    ;"
+"MOV E, 17    ;"
+"MOV F, 5     ;"
+"MOV H, 256   ;"
+"MOV I, 16000 ;"
+"SHL G, A, D  ;"
+"XOR A, A, G  ;"
+"SHR G, A, E  ;"
+"XOR A, A, G  ;"
+"SHL G, A, F  ;"
+"XOR A, A, G  ;"
+"MOD G, A, H  ;"
+"ADD B, B, C  ;"
+"STO B, A     ;"
+"JL  B, I, 16 ;"
+"JMP 2        ;";
+
 
 int assemble() {
   FILE *in = fopen("xorshift.asm", "r");
@@ -241,12 +260,6 @@ int assemble() {
       printf("%d\tMOD %c, %c, %c\n", line, regs[0]+'A', regs[1]+'A', regs[2]+'A');
       line += 1;
     }
-    if(isOpcode(op, "END")) {
-      i = (END<<24);
-      fwrite(&i, 4, 1, out);
-      printf("%d\tEND\n", line);
-      line += 1;
-    }
   }
   fflush(out);
   fclose(in);
@@ -259,7 +272,7 @@ int assemble() {
 int main(int argc, char* args[]) {
   unsigned char col;
   int *mem = malloc(65536*sizeof(int)*2);
-  int reg[256], a, b, c, i, j, k, pc, data, OP, *p, t = 1;
+  int reg[256], a, b, c, i, j, k, pc, data, OP, *p, t = 1, len;
   SDL_Event event;
   SDL_Window *window;
   SDL_Surface *surface;
@@ -277,16 +290,36 @@ int main(int argc, char* args[]) {
 
   FILE *f = fopen("ram.bin", "rb");
   fseek(f, 0, SEEK_END);
-  int len = ftell(f);
+  len = ftell(f);
   rewind(f);
   fread(mem, 1, len, f);
   fclose(f);
   printf("Program length %d bytes\n", len);
-
+  
+  /* ASCII hex conversion for verilog */
+  FILE *outh = fopen("ram.hex", "w");
+  for(i=0; i<512; i++)
+  	if(i<len)
+  		fprintf(outh, "%.8x\n", mem[i]);
+  	else
+  		fprintf(outh, "%.8x\n", 0);
+  fclose(outh);
+  
+  FILE *outh2 = fopen("ram2.hex", "w");
+  for(i=0; i<160*100; i++)
+	fprintf(outh, "%.2x\n", rand()%256);
+  fclose(outh2);
+  
   pc = 0;
   OP = 256;
 
   while(t++) {
+  	
+  	OP = (mem[pc]&0b11111111000000000000000000000000)>>24;
+    a = (mem[pc]&0b00000000111111110000000000000000)>>16;
+    b = (mem[pc]&0b00000000000000001111111100000000)>>8;
+    c = (mem[pc]&0b00000000000000000000000011111111);
+    data = mem[pc+1];
 
     /* JMP */
     if(OP==JMP) {
@@ -487,16 +520,6 @@ int main(int argc, char* args[]) {
       printf("MOD %c, %c, %c\n", a+'A', b+'A', c+'A');
 #endif
     }
-    
-    if(OP==END) {
-    	break;
-	}
-
-    OP = (mem[pc]&0b11111111000000000000000000000000)>>24;
-    a = (mem[pc]&0b00000000111111110000000000000000)>>16;
-    b = (mem[pc]&0b00000000000000001111111100000000)>>8;
-    c = (mem[pc]&0b00000000000000000000000011111111);
-    data = mem[pc+1];
 
     if(!(t%320)) {
       for(i=0; i<320*240; i++) {
