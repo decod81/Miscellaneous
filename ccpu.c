@@ -1,25 +1,25 @@
 /* Compilation: gcc ccpu.c -o ccpu -lSDL2main -lSDL2
  * Example program: fill the screen with random (xorshift32) dots
- *
- * MOV A, 1             ; A: variable to hold pixel value (and initial value to xorshift pseudorandom)
- * MOV B, 255           ; B: variable to hold pixel position
- * MOV C, 1             ; C: variable used in adding the pixel position 
- * MOV D, 13            ; D: variable used in xorshift
- * MOV E, 17            ; E: variable used in xorshift
- * MOV F, 5             ; F: variable used in xorshift
- * MOV H, 256           ; H: variable used to limit the pixel values to 255
- * MOV I, 76800         ; I: variable indicating the memory location where filling of the screen should stop
- * SHL G, A, D          ; begin: standard xorshift32
- * XOR A, A, G          ; x ^= x << 13
- * SHR G, A, E
- * XOR A, A, G          ; x ^= x >> 17
- * SHL G, A, F
- * XOR A, A, G          ; x ^= x << 5 (end: standard xorshift32)
- * MOD G, A, H          ; limit the pixel values to 255
- * ADD B, B, C          ; increase memory location by 1
- * STO B, A             ; write pixel value
- * JL  B, I, 16         ; jump back to 16 if we havn't reached end of the screen yet
- * JMP 2                ; jump back to beginning (without resetting the random seed)
+
+MOV A, 1
+MOV B, 159
+MOV C, 1
+MOV D, 13
+MOV E, 17
+MOV F, 5
+MOV H, 256
+MOV I, 64000
+SHL G, A, D
+XOR A, A, G
+SHR G, A, E
+XOR A, A, G
+SHL G, A, F
+XOR A, A, G   ;
+ADD B, B, C   ;
+STO B, A      ; 
+JL  B, I, 16  ;
+JMP 2         ;
+
  */
 
 #include <math.h>
@@ -30,7 +30,7 @@
 //#define DEBUG
 
 /* Branching */
-#define NOP  0
+#define CMP  0
 #define JMP  1
 #define JE   2
 #define JNE  3
@@ -70,28 +70,6 @@ int isOpcode(char *opc, char *cmp) {
     return 0;
 }
 
-char *prg = 
-"MOV A, 1     ;"
-"MOV B, 255   ;"
-"MOV C, 1     ;"
-"MOV D, 13    ;"
-"MOV E, 17    ;"
-"MOV F, 5     ;"
-"MOV H, 256   ;"
-"MOV I, 16000 ;"
-"SHL G, A, D  ;"
-"XOR A, A, G  ;"
-"SHR G, A, E  ;"
-"XOR A, A, G  ;"
-"SHL G, A, F  ;"
-"XOR A, A, G  ;"
-"MOD G, A, H  ;"
-"ADD B, B, C  ;"
-"STO B, A     ;"
-"JL  B, I, 16 ;"
-"JMP 2        ;";
-
-
 int assemble() {
   FILE *in = fopen("xorshift.asm", "r");
   FILE *out = fopen("ram.bin", "wb");
@@ -126,6 +104,12 @@ int assemble() {
     }
 
     /* handle opcodes */
+    if(isOpcode(op, "CMP")) {
+      i = (CMP<<24)+(regs[0]<<16)+(regs[1]<<8);
+      fwrite(&i, 4, 1, out);
+      printf("%d\tCMP %c, %c\n", line, regs[0]+'A', regs[1]+'A', j);
+      line += 1;
+    }
     if(isOpcode(op, "JMP")) {
       i = JMP<<24;
       fwrite(&i, 4, 1, out);
@@ -166,6 +150,7 @@ int assemble() {
       fwrite(&i, 4, 1, out);
       fwrite(&j, 4, 1, out);
       printf("%d\tJL  %c, %c, %d\n", line, regs[0]+'A', regs[1]+'A', j);
+      //printf("%d\tJL  %d\n", line, j);
       line += 2;
     }
     if(isOpcode(op, "JLE")) {
@@ -298,11 +283,8 @@ int main(int argc, char* args[]) {
   
   /* ASCII hex conversion for verilog */
   FILE *outh = fopen("ram.hex", "w");
-  for(i=0; i<512; i++)
-  	if(i<len)
-  		fprintf(outh, "%.8x\n", mem[i]);
-  	else
-  		fprintf(outh, "%.8x\n", 0);
+  for(i=0; i<256; i++)
+	fprintf(outh, "%.8x\n", mem[i]);
   fclose(outh);
   
   FILE *outh2 = fopen("ram2.hex", "w");
