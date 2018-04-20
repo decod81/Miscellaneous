@@ -1,7 +1,7 @@
 /* Compilation: gcc ccpu.c -o ccpu -lSDL2main -lSDL2
  * Example program: fill the screen with random (xorshift32) dots
  *
- * MOV A, 1             ; A: variable to hold pixel value (and initial value to xorshift random number algorithm)
+ * MOV A, 1             ; A: variable to hold pixel value (and initial value to xorshift pseudorandom)
  * MOV B, 255           ; B: variable to hold pixel position
  * MOV C, 1             ; C: variable used in adding the pixel position 
  * MOV D, 13            ; D: variable used in xorshift
@@ -19,7 +19,7 @@
  * ADD B, B, C          ; increase memory location by 1
  * STO B, A             ; write pixel value
  * JL  B, I, 16         ; jump back to 16 if we havn't reached end of the screen yet
- * END                  ; end program
+ * JMP 2                ; jump back to beginning (without resetting the random seed)
  */
 
 #include <math.h>
@@ -509,8 +509,6 @@ int main(int argc, char* args[]) {
     if(SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
   }
   free(mem);
-  printf("Program complete.");
-  getch();
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
