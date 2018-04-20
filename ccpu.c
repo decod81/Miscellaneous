@@ -1,25 +1,25 @@
 /* Compilation: gcc ccpu.c -o ccpu -lSDL2main -lSDL2
  * Example program: fill the screen with random (xorshift32) dots
  *
- * MOV A, 1
- * MOV B, 255
- * MOV C, 1
- * MOV D, 13
- * MOV E, 17
- * MOV F, 5
- * MOV H, 256
- * MOV I, 76800
- * SHL G, A, D
- * XOR A, A, G
+ * MOV A, 1				; A: variable to hold pixel value (and initial value to xorshift random number algorithm)
+ * MOV B, 255			; B: variable to hold pixel position
+ * MOV C, 1             ; C: variable used in adding the pixel position 
+ * MOV D, 13            ; D: variable used in xorshift
+ * MOV E, 17            ; E: variable used in xorshift
+ * MOV F, 5             ; F: variable used in xorshift
+ * MOV H, 256           ; H: variable used to limit the pixel values to 255
+ * MOV I, 76800         ; I: variable indicating the memory location where filling of the screen should stop
+ * SHL G, A, D          ; begin: standard xorshift32
+ * XOR A, A, G          ; x ^= x << 13
  * SHR G, A, E
- * XOR A, A, G
+ * XOR A, A, G          ; x ^= x >> 17
  * SHL G, A, F
- * XOR A, A, G
- * MOD G, A, H
- * ADD B, B, C
- * STO B, A
- * JL  B, I, 16
- * END
+ * XOR A, A, G          ; x ^= x << 5 (end: standard xorshift32)
+ * MOD G, A, H          ; limit the pixel values to 255
+ * ADD B, B, C          ; increase memory location by 1
+ * STO B, A             ; write pixel value
+ * JL  B, I, 16         ; jump back to 16 if we havn't reached end of the screen yet
+ * END                  ; end program
  */
 
 #include <math.h>
@@ -90,7 +90,7 @@ int assemble() {
       nbuf[i] = 0;
     i = 3;
     j = 0;
-    while(buf[i]!='\n') {
+    while(buf[i]!='\n' && buf[i]!=';') {
       if(buf[i]>47 && buf[i]<58)
 	nbuf[j++] = buf[i];
       i++;
@@ -100,7 +100,7 @@ int assemble() {
     /* find registers */
     i = 3;
     k = 0;
-    while(buf[i]!='\n') {
+    while(buf[i]!='\n' && buf[i]!=';') {
       if(buf[i]>64 && buf[i]<91)
 	regs[k++] = buf[i]-'A';
       i++;
