@@ -1,8 +1,8 @@
 /* Compilation: gcc ccpu.c -o ccpu -lSDL2main -lSDL2
  * Example program: fill the screen with random (xorshift32) dots
  *
- * MOV A, 1				; A: variable to hold pixel value (and initial value to xorshift random number algorithm)
- * MOV B, 255			; B: variable to hold pixel position
+ * MOV A, 1             ; A: variable to hold pixel value (and initial value to xorshift random number algorithm)
+ * MOV B, 255           ; B: variable to hold pixel position
  * MOV C, 1             ; C: variable used in adding the pixel position 
  * MOV D, 13            ; D: variable used in xorshift
  * MOV E, 17            ; E: variable used in xorshift
