@@ -41,6 +41,7 @@ int isOpcode(char *opc, char *cmp) {
   else
     return 0;
 }
+
 int main() {
   FILE *in = fopen("xorshift.asm", "r");
   FILE *out = fopen("ram.bin", "wb");
