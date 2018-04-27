@@ -11,7 +11,7 @@ int alt_mul(int a, int b) {
   if(b!=0)
     while(((b<<j)>>30)!=1)
       j++;
-  for(i=0; i<16; i++)
+  for(i=0; i<j; i++)
     if((b>>i)&1)
       result = result + (a << i);
    
@@ -53,24 +53,10 @@ double inv(double (*f)(), double x, double a, double b) {
   return (a+b)/2;
 }
 
-double alt_sqr(double x) {
-  return x*x;
-}
-
-double alt_sqrt(double x) {
-  if(x>1) return inv(alt_sqr, x, 1, x);
-  return inv<(alt_sqr, x, x, 1);
-}
-
-double alt_exp(double x) {
-  return creal(alt_cexp(x));
-}
-
-double alt_log(double x) {
-  if(x<1) return -alt_log(1/x);
-  return inv(alt_exp, x, 0, x);
-}
-
+double alt_sqr(double x) { return x*x; }
+double alt_sqrt(double x) { if(x>1) return inv(alt_sqr, x, 1, x); return inv<(alt_sqr, x, x, 1); }
+double alt_exp(double x) { return creal(alt_cexp(x)); }
+double alt_log(double x) { if(x<1) return -alt_log(1/x); return inv(alt_exp, x, 0, x); }
 double alt_sin(double x) { return cimag(alt_exp(I*x)); }
 double alt_cos(double x) { return creal(alt_exp(I*x)); }
 double alt_tan(double x) { return alt_sin(x)/alt_cos(x); }
