@@ -177,7 +177,7 @@ int assemble() {
 int main(int argc, char* args[]) {
   unsigned char R, G, B;
   char *mem = malloc(4*65536*sizeof(char)); /* 256 kB */
-  int reg[64], a, b, c, i, j, k, pc, data, OP, *p, t = 1, len;
+  int reg[128], a, b, c, i, j, k, pc, data, OP, *p, t = 1, len;
   SDL_Event event;
   SDL_Window *window;
   SDL_Surface *surface;
@@ -190,7 +190,7 @@ int main(int argc, char* args[]) {
   window = SDL_CreateWindow("CCPU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
   surface = SDL_GetWindowSurface(window);
 
-  for(pc=0; pc<64; pc++) reg[pc] = 0;
+  for(pc=0; pc<128; pc++) reg[pc] = 0;
   for(pc=0; pc<4*65536; pc++) mem[pc] = 0;
 
   FILE *f = fopen("dst.bin", "rb");
