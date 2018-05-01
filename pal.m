@@ -10,12 +10,6 @@ image(RGB);
 truesize;
 title('RGB');
 
-figure;
-image(mean(RGB, 3));
-colormap(gray(256));
-truesize;
-title('Black and white PAL signal');
-
 visual = 52e-6;
 t = linspace(0, visual, 768);   % horizontal resolution
 f = 4.43361875e6;               % color carrier
@@ -44,16 +38,14 @@ for y = 1:576
     end
 end
 
-figure;
-imagesc(E-min(min(E)));
-colormap(gray(256));
-title('Color PAL signal on a black and white TV');
-truesize;
-
 g = sin(2*pi*f*t);
 h = cos(2*pi*f*t);
 Y = E;
-N = 5;
+N = 1;
+M = 1;
+N = 16;
+M = 24;
+c = 232;
 U = zeros(1, 768);
 V = zeros(1, 768);
 for y = 1:576
@@ -76,52 +68,10 @@ for y = 1:576
         U(y, 1+x) = 2*u;
         V(y, 1+x) = 2*v;
     end
-end
-
-B = Y + U/0.493;
-R = Y + V/0.877;
-G = (Y - 0.299*R - 0.114*B)/0.587;
-
-RGBN = zeros(576, 768, 3);
-RGBN(:, :, 1) = R;
-RGBN(:, :, 2) = G;
-RGBN(:, :, 3) = B;
-
-figure;
-image(uint8(RGBN));
-title('Color PAL signal on a color TV');
-truesize;
-
-
-g = sin(2*pi*f*t);
-h = cos(2*pi*f*t);
-Y = E;
-N = 5;
-U = zeros(1, 768);
-V = zeros(1, 768);
-for y = 1:576
-    if mod(y, 2)==0
-        if mod(y, 4)==2
-            sig = 1;
-        else
-            sig = -1;
-        end
-    else
-        if mod(y+1, 4)==0
-            sig = -1;
-        else
-            sig = 1;
-        end
-    end
-    for x = N+1:768-(N+1)
-        u = mean(g(x-N:x+N).*E(y, x-N:x+N));
-        v = mean(sig*h(x-N:x+N).*E(y, x-N:x+N));
-        U(y, 1+x) = 2*u;
-        V(y, 1+x) = 2*v;
-    end
-    YY = fft(Y(y, :));
-    YY(210:260) = 0; % aggressive notch
-    Y(y, :) = ifft(YY, 'symmetric');
+    % agressive notch
+    YY = fft(Y(y, :)); YY(c-M:c+M) = 0; Y(y, :) = ifft(YY, 'symmetric');
+    UU = fft(U(y, :)); UU(c-M:c+M) = 0; U(y, :) = ifft(UU, 'symmetric');
+    VV = fft(V(y, :)); VV(c-M:c+M) = 0; V(y, :) = ifft(VV, 'symmetric');
     y
 end
 
@@ -138,3 +88,4 @@ figure;
 image(uint8(RGBN));
 title('Color PAL signal on a color TV with color carrier notch');
 truesize;
+% imwrite(uint8(RGBN), 'composite3.png');
