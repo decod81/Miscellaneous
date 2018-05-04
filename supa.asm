@@ -1,8 +1,8 @@
+; turns supaplex.exe into a .com-file
 ; nasm -f bin supa.asm -o supa.com
 ; CS:IP 0AFF:0010 (45056)
 ; SS:SP 58D4:0080 (363968)
-
-; 8B E8 8C C0 05 10 00 0E 1F A3 04 00 03 06 0C 00
+; relocations don't happen and this will work
 
 BITS 16
 ORG 0x100
@@ -24,7 +24,7 @@ ORG 0x100
 	push	bx
 	mov	ax, 0
 	mov	bx, 0
-	retf                    ; just to where execution should start
+	retf                    ; jump to where execution should start
 
 times 64- ($-$$) db 0
 
