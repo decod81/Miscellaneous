@@ -12,11 +12,11 @@ ORG 0x100
 	add	cx, 0x0080	; add SP offset
 	mov	sp, cx		; set SP
 
-	add	bx, 64/16	; move past the 4k of this program
+	add	bx, 64/16	; move past the this program
 	add	bx, 0x58D4	; add SS offset
 	mov	ss, bx		; set SS
 	
-	add	ax, 64/16       ; move past the 4k of this program
+	add	ax, 64/16       ; move past the this program
 	add	ax, 16          ; correct org
 	add	ax, 0x0AFF	; add CS offset
 	mov	bx, 0x0010
