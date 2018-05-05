@@ -14,8 +14,8 @@ ORG 0x100
 	mov	bx, 0x58D4       ; stack is really kind of arbitrary here
 	mov	ss, bx		 ; set SS
 	
-	add	ax, 32/16+0x0010+0x0AFF ; skip begin+org and add CS offset
-	push	ax
+	add	ax, 32/16+0x0010+0x0AFF ; skip begin
+	push	ax               ; add CS offset
 	push	0x0010
 	retf                    ; jump to where execution should start
 
