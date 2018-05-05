@@ -7,12 +7,11 @@
 BITS 16
 ORG 0x100
 	mov	ax, cs
-	mov	bx, ax
 
-	add	cx, 0x0080	 ; add SP offset
-	mov	sp, cx		 ; set SP
+	mov	bx, 0x0080	 ; stack is really kind of arbitrary here
+	mov	sp, bx		 ; set SP
 
-	add	bx, 32/16-0x58D4 ; move past the beginning and add SS offset
+	mov	bx, 0x58D4       ; stack is really kind of arbitrary here
 	mov	ss, bx		 ; set SS
 	
 	add	ax, 32/16+16+0x0AFF ; move past, correct org and add CS offset
