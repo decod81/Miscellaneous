@@ -11,13 +11,17 @@ BITS 16
 
 DAP:
   dw 0x1000
-  dw 2           ; # of 512 byte blocks to do
-  dw 0x7E00      ; address (offset)
+  dw 4           ; # of 512 byte blocks to do
+  dw 0x8000      ; address (offset)
   dw 0x0000      ; address (segment)
   dd 1           ; read sector #
   dd 0
 
 Main:
+  in al, 0x92    ;
+  or al, 2       ; enable A20
+  out 0x92, al   ;
+
   mov si, DAP    ; disk address packet
   mov ah, 0x42   ; extended read
   mov dl, 0x80   ; drive = C
@@ -36,7 +40,9 @@ Main:
   mov gs, ax
   cld
 
-  mov edi, 0x9000
+  mov edi, 0x9000 ; free space
+
+  jmp SwitchToLongMode
 
 ALIGN 4
 IDT:
@@ -103,7 +109,7 @@ SwitchToLongMode:
 
   lgdt [GDT.Pointer]
 
-  jmp 0x7E00 ; simply jump past the 512 byte boot sector
+  jmp 0x0008:_start
 
 GDT:
 .Null:
@@ -122,3 +128,5 @@ ALIGN 4
 
 times 510 - ($-$$) db 0
 dw 0xAA55
+
+_start:

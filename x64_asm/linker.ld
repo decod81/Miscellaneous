@@ -8,9 +8,10 @@ SECTIONS
 	}
 	.data :
 	{
-		*(.data);
-		*(.bss);
-		*(.rodata*);
+		*(.data)
 	}
-	_heap = ALIGN(4);
+	.bss :
+	{
+		*(.bss)
+	}
 }
