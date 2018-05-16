@@ -1,17 +1,7 @@
 OUTPUT_FORMAT(binary)
-SECTIONS
-{
+SECTIONS {
 	. = 0x8000;
-	.text :
-	{
-		*(.text)
-	}
-	.data :
-	{
-		*(.data)
-	}
-	.bss :
-	{
-		*(.bss)
-	}
+	.text :	{ *(.text) }
+	.data : { *(.data) }
+	.bss  :	{ *(.bss)  }
 }

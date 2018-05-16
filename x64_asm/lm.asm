@@ -1,5 +1,5 @@
 ; nasm -f bin lm.asm -o lm
-; qemu-system-x86_64 -hda lm
+; qemu-system-x86_64 -hda kernel
 
 %define PAGE_PRESENT    (1 << 0)
 %define PAGE_WRITE      (1 << 1)
@@ -11,7 +11,7 @@ BITS 16
 
 DAP:
   dw 0x1000
-  dw 4           ; # of 512 byte blocks to do
+  dw 16          ; # of 512 byte blocks to do
   dw 0x8000      ; address (offset)
   dw 0x0000      ; address (segment)
   dd 1           ; read sector #
@@ -26,9 +26,6 @@ Main:
   mov ah, 0x42   ; extended read
   mov dl, 0x80   ; drive = C
   int 0x13       ; read using BIOS
-
-  mov ax, 13h    ; 320x200 @ 256 colors
-  int 10h        ; switch using BIOS
 
   xor ax, ax
   mov ss, ax
