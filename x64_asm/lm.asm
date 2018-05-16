@@ -1,5 +1,5 @@
-; nasm -f bin longmode.asm -o longmode
-; qemu-system-x86_64 -hda longmode
+; nasm -f bin lm.asm -o lm
+; qemu-system-x86_64 -hda lm
 
 %define PAGE_PRESENT    (1 << 0)
 %define PAGE_WRITE      (1 << 1)
@@ -8,10 +8,11 @@ ORG 0x7C00
 BITS 16
 
   jmp Main
+
 DAP:
   dw 0x1000
-  dw 1           ; # of 512 byte blocks to do
-  dw 0x8000      ; address (offset)
+  dw 2           ; # of 512 byte blocks to do
+  dw 0x7E00      ; address (offset)
   dw 0x0000      ; address (segment)
   dd 1           ; read sector #
   dd 0
@@ -102,7 +103,7 @@ SwitchToLongMode:
 
   lgdt [GDT.Pointer]
 
-  jmp 0x0008:LongMode
+  jmp 0x7E00 ; simply jump past the 512 byte boot sector
 
 GDT:
 .Null:
@@ -119,25 +120,5 @@ ALIGN 4
   dw $ - GDT - 1
   dd GDT
 
-[BITS 64]
-LongMode:
-  jmp _start
-
 times 510 - ($-$$) db 0
 dw 0xAA55
-
-_start:
-;  mov edi, 0x000A0000
-
-;  mov rax, 0x1F6C1F6C1F651F48
-;  mov [edi], rax
-
-;  mov rax, 0x1F6F1F571F201F6F
-;  mov [edi + 8], rax
-
-;  mov rax, 0x1F211F641F6C1F72
-;  mov [edi + 16], rax
-;loop:
-;  hlt
-
-;times 1024 - ($-$$) db 0
