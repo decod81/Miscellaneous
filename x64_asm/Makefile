@@ -1,25 +1,25 @@
-main: cmd.o write.o exit.o
-	gcc -nostdlib -ffreestanding main.c cmd.o write.o exit.o -lc -o main
+kernel64:
+	nasm -f bin bootsect64.asm -o bootsect64.bin
+	gcc -nostdlib -ffreestanding -c boot64.c
+	ld -T boot64.ld boot64.o -o boot64.bin
+	cat bootsect64.bin > kernel64.bin
+	cat boot64.bin >> kernel64.bin
+
+kernel16:
+	nasm -f bin bootsect16.asm -o kernel16.bin
 
 hello:
-	nasm -f elf64 hello.s
+	nasm -f elf64 hello.s -o hello.o
 	gcc -nostdlib hello.o -o hello
 
-hellocmd:
-	nasm -f elf64 hellocmd.s
-	gcc -nostdlib hellocmd.o -o hellocmd -lc
-
-cmd.o:
+nostdlib:
 	nasm -f elf64 cmd.s
-
-write.o:
 	nasm -f elf64 write.s
-
-exit.o:
 	nasm -f elf64 exit.s
+	gcc -nostdlib -ffreestanding nostdlib.c cmd.o write.o exit.o -lc -o nostdlib
 
 clean:
 	rm -rf *.o
-	rm -f hellocmd
+	rm -rf *.bin
+	rm -f nostdlib
 	rm -f hello
-	rm -f main

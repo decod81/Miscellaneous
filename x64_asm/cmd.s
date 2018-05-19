@@ -1,8 +1,11 @@
 section .text
 extern main
 global _start
+
 _start:
-	pop	rdi       ; first argument
+	pop	rdi
+	pop	rsi
+	pop	rdx
 	call	main
 
 	mov	rax, 60
