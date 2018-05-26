@@ -1,4 +1,4 @@
-/* gcc ccpu.c -o ccpu -lSDL2main -lSDL2 */
+/* gcc cpu.c -o cpu -lSDL2 */
 
 #include <math.h>
 #include <stdio.h>
@@ -25,18 +25,19 @@
 #define SYN 16
 
 char src[] = /* xorshift32 random noise generator */
-  "DAT 38         \n" /* interrupt addresses for ints 0-7 (0 vsync) */
-  "DAT 0          \n"
-  "DAT 0          \n"
-  "DAT 0          \n"
-  "DAT 0          \n"
-  "DAT 0          \n"
-  "DAT 0          \n"
-  "DAT 0          \n"
+  "JMP 37         \n"
+  "DAT 43         \n" /* int 0 addr */
+  "DAT 0          \n" /* int 1 addr */
+  "DAT 0          \n" /* int 2 addr */
+  "DAT 0          \n" /* int 3 addr */
+  "DAT 0          \n" /* int 4 addr */
+  "DAT 0          \n" /* int 5 addr */
+  "DAT 0          \n" /* int 6 addr */
+  "DAT 0          \n" /* int 7 addr */
   "MOV A, 1       \n"
   "MOV B, 65535   \n"
   "MOV C, 1       \n"
-  "MOV D, 13      \n"
+  "MOV D, 13      \n" 
   "MOV E, 17      \n"
   "MOV F, 5       \n"
   "MOV I, 142336  \n" /* 65536+320*240 */
@@ -220,8 +221,8 @@ int assemble() {
 
 int main(int argc, char* args[]) {
   unsigned char R, G, B;
-  char *mem = malloc(4*65536*sizeof(char)); /* 256 kB */
-  int reg[128], pc, data, *p, t = 1, len, OP, a, b, c, i, j, k;
+  char *mem = malloc(1024*1024*sizeof(char)); /* 1 MB */
+  int reg[64], pc, data, *p, t = 1, len, OP, a, b, c, i, j, k;
   SDL_Event event;
   SDL_Window *window;
   SDL_Surface *surface;
@@ -232,8 +233,8 @@ int main(int argc, char* args[]) {
   window = SDL_CreateWindow("CCPU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
   surface = SDL_GetWindowSurface(window);
 
-  for(pc=0; pc<128; pc++) reg[pc] = 0;
-  for(pc=0; pc<4*65536; pc++) mem[pc] = 0;
+  for(pc=0; pc<64; pc++) reg[pc] = 0;
+  for(pc=0; pc<1024*1024; pc++) mem[pc] = 0;
 
   FILE *f = fopen("dst.bin", "rb");
   fseek(f, 0, SEEK_END);
@@ -242,7 +243,7 @@ int main(int argc, char* args[]) {
   fread(mem, 1, len, f);
   fclose(f);
 
-  pc = 4*8;
+  pc = 0;
   while(t++) {
     OP = mem[pc];
     a = mem[pc+1];
@@ -338,7 +339,7 @@ int main(int argc, char* args[]) {
                   *p = (R<<16) + (G<<8) + B;
         }
       SDL_UpdateWindowSurface(window);
-      pc = (mem[0]<<24)+(mem[1]<<16)+(mem[2]<<8)+(mem[3]);
+      pc = (mem[5]<<24)+(mem[6]<<16)+(mem[7]<<8)+(mem[8]);
       if(SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
     }
   }
