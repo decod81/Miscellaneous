@@ -7,7 +7,7 @@ Navier-Stokes fluid simulations, numerical simulations of the Schrödinger equat
 ![2](https://user-images.githubusercontent.com/21305739/127687801-6769ef6b-4922-43e7-94fd-6fa306d998cc.jpg)
 
 Other stuff:
-- FPGA softcore with DIY instruction set executing xorshift in software while displaying on a custom VGA implementation
+- FPGA softcore with DIY instruction set executing xorshift in while displaying on a VGA implementation
 - Custom assembler for my custom FPGA softcore (programmed in C)
 - Arduino Nano interfacing with OLED display while rendering Mandelbrot fractals
 - Arbitrary precision mathematical functions
