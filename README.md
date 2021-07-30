@@ -11,10 +11,11 @@ Schrödinger equation simulations:
 
 ![MATLAB-Schroedinger_2D_Scattering-Screenshot](https://user-images.githubusercontent.com/21305739/127682150-7a0295fb-0373-46bc-8d8c-080128f1b734.gif)
 
-Arduino Nano interfacing with OLED display, and rendering Mandelbrot fractal:
-
-![ARDUINO-OLED-Screenshot](https://user-images.githubusercontent.com/21305739/127681827-70bd264b-bbee-416a-ad29-555ec8303c62.jpg)
-
 Raytracing:
 
 ![OpenGL-GLSL-Raytrace-Screenshot](https://user-images.githubusercontent.com/21305739/127682506-5eb91c12-4626-4396-98be-f715abbd3fe4.gif)
+
+Other stuff:
+- Arduino Nano interfacing with OLED display, and rendering Mandelbrot fractal
+- FPGA generating VGA signals and rendering fonts and graphics
+- Arbitrary precision mathematical functions
