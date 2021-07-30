@@ -1,12 +1,12 @@
 /*
- * Compile: gcc PORT-Sokoban-SDL2.c -lSDL2
+ * Compile:
+ * x86_64-w64-mingw32-gcc -mwindows sokoban.c -lSDL2 -I SDL2-2.0.14/x86_64-w64-mingw32/include/ -L SDL2-2.0.14/x86_64-w64-mingw32/lib/ -lSDL2 -lSDL2main
  *
  * Keys
  *
  * Arrows	Movement
  * 1		Previous levelset
  * 2		Next levelset
- * 3		Restart level
  * ESC		Quit
  *
  * Level conversion
@@ -4994,7 +4994,7 @@ int DrawLevel() {
  * Save the progess to save.txt.
  */
 int Save() {
-	stream = fopen("save.bin", "w");
+	stream = fopen("sokoban.sav", "w");
 	fseek(stream, -8, SEEK_END);
 	for(i=0; i<8; i++)
 		fputc(sets[i], stream);
@@ -5005,7 +5005,7 @@ int Save() {
  * Load the progress from save.txt.
  */
 int Load() {
-	stream = fopen("save.bin", "r");
+	stream = fopen("sokoban.sav", "r");
 	fseek(stream, -8, SEEK_END);
 	for(i=0; i<8; i++)
 		sets[i] = fgetc(stream);
@@ -5091,9 +5091,9 @@ int WinMain() {
 	window = SDL_CreateWindow("Sokoban", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, resx, resy, 0);
 	screen = SDL_GetWindowSurface(window);
 
-	stream = fopen("save.bin", "r");
+	stream = fopen("sokoban.sav", "r");
 	if(stream==NULL) {
-		stream = fopen("save.bin", "w");
+		stream = fopen("sokoban.sav", "w");
 		for(i=0; i<8; i++)
 			fputc(0x00, stream);
 		fclose(stream);
@@ -5124,9 +5124,6 @@ int WinMain() {
 				break;
 			case SDLK_2:
 				if(set<7) set++;
-				Change();
-				break;
-			case SDLK_3:
 				Change();
 				break;
 			case SDLK_UP:
