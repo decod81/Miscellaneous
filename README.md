@@ -15,13 +15,6 @@ Arduino Nano interfacing with OLED display, and rendering Mandelbrot fractal:
 
 ![ARDUINO-OLED-Screenshot](https://user-images.githubusercontent.com/21305739/127681827-70bd264b-bbee-416a-ad29-555ec8303c62.jpg)
 
-Dithering code:
-
-![MATLAB-FS-dithering-colorful](https://user-images.githubusercontent.com/21305739/127681914-7331faf5-062d-4d78-bbbb-65057cbd0120.png)
-
 Raytracing:
 
 ![OpenGL-GLSL-Raytrace-Screenshot](https://user-images.githubusercontent.com/21305739/127682506-5eb91c12-4626-4396-98be-f715abbd3fe4.gif)
-
-Remake of ksokoban:
-<img width="468" alt="sokoban" src="https://user-images.githubusercontent.com/21305739/127681722-6b138c45-6a4e-4121-a98b-82b01b7b60cc.png">
