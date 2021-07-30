@@ -16,6 +16,9 @@ Raytracing:
 ![OpenGL-GLSL-Raytrace-Screenshot](https://user-images.githubusercontent.com/21305739/127682506-5eb91c12-4626-4396-98be-f715abbd3fe4.gif)
 
 Other stuff:
-- Arduino Nano interfacing with OLED display, and rendering Mandelbrot fractal
-- FPGA generating VGA signals and rendering fonts and graphics
+- FPGA softcore with DIY instruction set executing xorshift in software while displaying on a custom VGA implementation
+- Custom assembler for my custom FPGA softcore (programmed in C)
+- Arduino Nano interfacing with OLED display while rendering Mandelbrot fractals
 - Arbitrary precision mathematical functions
+- Remake of ksokoban using SDL2
+- GLSL code
