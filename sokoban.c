@@ -4874,18 +4874,11 @@ int Levels() {
 			data[j++] = leveldata[i-1];
 		else {
 			data[j++] = '\n'; data[j++] = 0; j = 0;
-
-			/* if a line contains text, it is the name for k:th levelset */
 			if((data[0]>='A'&&data[0]<='Z')||(data[0]>='a'&&data[0]<='z')) {
-				/* levelset of interest ended so return the number of levels */
 				if(k==set) return l;
-
-				/* otherwise record the name of the beginning levelset */
 				sprintf(levelname, "%s ", data);
 				k++;
 			}
-
-			/* if we're in the set we're looking for, count the number of levels */
 			if(k==set && data[0]==' ' && data[1]=='\n') l++;
 		}
 	}
@@ -4909,14 +4902,13 @@ int LoadLevel() {
 
 			/* if a line contains text, it is the name for k:th levelset */
 			if((data[0]>='A' && data[0]<='Z') || (data[0]>='a' && data[0]<='z')) k++;
+
 			/* if we're in the set we're looking for, start counting the levels */
 			if(k==set && data[0]==' ' && data[1]=='\n') l++;
 
 			/* if we're in the set and level we're looking for, collect the level */
 			if(k==set && l==sets[set]-1) {
 				k = i;
-
-				/* clean the level */
 				for(i=0; i<27*20; i++) level[i] = 0;
 				i = 0;
 				j = 0;
@@ -5110,7 +5102,7 @@ int WinMain() {
 				Change();
 				break;
 			case SDLK_9:
-				sets[set]--;
+				if(sets[set]>0) sets[set]--;
 				Save();
 				Change();
 				break;
