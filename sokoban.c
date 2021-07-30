@@ -1,17 +1,14 @@
 /*
  * Compile:
+ *
  * x86_64-w64-mingw32-gcc -mwindows sokoban.c -lSDL2 -I SDL2-2.0.14/x86_64-w64-mingw32/include/ -L SDL2-2.0.14/x86_64-w64-mingw32/lib/ -lSDL2 -lSDL2main
  *
- * Keys
+ * Keys:
  *
  * Arrows	Movement
  * 1		Previous levelset
  * 2		Next levelset
  * ESC		Quit
- *
- * Level conversion
- *
- * awk '{ print "\""$0"\""}' levels.txt >> sokoban.c
  *
  */
 #include <stdio.h>
@@ -19,35 +16,36 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
-SDL_Surface
-		*IMG_diamond,
-		*IMG_man,
-		*IMG_goal,
-		*IMG_treasure,
-		*IMG_stone,
-		*IMG_floor,
-		*IMG_saveman,
-		*screen;
+SDL_Surface *IMG_diamond,
+	*IMG_man,
+	*IMG_goal,
+	*IMG_treasure,
+	*IMG_stone,
+	*IMG_floor,
+	*IMG_saveman,
+	*screen;
 
 SDL_Window *window;
 
-int		sets[8],
-		set = 0,
-		levels,
-		manx, many,
-		resx = 29*16, resy = 22*16,
-		liikuttiin = 0,
-		done = 0,
-		i, j, k, l;
+int sets[8],
+	set = 0,
+	levels,
+	manx,
+	many,
+	resx = 29*16,
+	resy = 22*16,
+	liikuttiin = 0,
+	done = 0,
+	i, j, k, l;
 
-char	data[256],
-		level[27*20],
-		fnttext[256],
-		levelname[255];
+char data[256],
+	level[27*20],
+	fnttext[256],
+	levelname[255];
 
-FILE	*stream;
+FILE *stream;
 
-int BITMAP0[16*16] = { // Diamond
+int BITMAP0[16*16] = { /* Diamond */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x6d6262, 0x646161, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x956c6e, 0x7e696b, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -75,7 +73,7 @@ int BITMAP0[16*16] = { // Diamond
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666};
 
-int BITMAP1[16*16] = { // Man
+int BITMAP1[16*16] = { /* Man */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x93938a, 0x92887f, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x79736f, 0x939289, 0x8c8179, 0x312d2b, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -103,7 +101,7 @@ int BITMAP1[16*16] = { // Man
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x0909c9, 0x00008b, 0x666666, 0x666666, 0x0000d3,
 0x0f0f72, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666};
 
-int BITMAP2[16*16] = { // Treasure
+int BITMAP2[16*16] = { /* Treasure */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x845f61, 0x372829, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0xab7679, 0xa37476, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -131,7 +129,7 @@ int BITMAP2[16*16] = { // Treasure
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x6d6d6d, 0x343534, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666};
 
-int BITMAP3[16*16] = { // Goal
+int BITMAP3[16*16] = { /* Goal */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x717171, 0x353535, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x6d6d6d, 0x353535, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -159,7 +157,7 @@ int BITMAP3[16*16] = { // Goal
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x6d6d6d, 0x353535, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666};
 
-int BITMAP4[16*16] = { // Wall
+int BITMAP4[16*16] = { /* Wall */
 0x060606, 0xeeeae9, 0xded9d6, 0xcdc5c2, 0xd1c9c2, 0xddd6d1, 0xcac5c1, 0x000000, 0x060606, 0xd0c6bf,
 0xd1c9c2, 0xc8beb7, 0xe2dcd7, 0xeee9e6, 0xcec7c4, 0x000000, 0xc1b9b6, 0xffffff, 0xffffff, 0xe2dedd,
 0xfaf9f6, 0xece7e5, 0xd9d2ce, 0x827d7a, 0xbeb5b2, 0xffffff, 0xe1dad3, 0xc5bdb6, 0xf1edea, 0xece7e2,
@@ -187,7 +185,7 @@ int BITMAP4[16*16] = { // Wall
 0x000000, 0x3c3b3a, 0x63615f, 0x5c5957, 0x484645, 0x565453, 0x615e5c, 0x7a7876, 0x7a7876, 0x63615f,
 0x6d6967, 0x5a5655, 0x63615f, 0x42403f, 0x484645, 0x000000};
 
-int BITMAP5[16*16] = { // Floor
+int BITMAP5[16*16] = { /* Floor */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -215,7 +213,7 @@ int BITMAP5[16*16] = { // Floor
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666};
 
-int BITMAP6[16*16] = { // Saveman
+int BITMAP6[16*16] = { /* Saveman */
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0xfffee2, 0xf9d7ba, 0x666666,
 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666, 0x666666,
 0x666666, 0x666666, 0xd1ae96, 0xfffddc, 0xf2caaf, 0x1a1914, 0x666666, 0x666666, 0x666666, 0x666666,
@@ -4856,7 +4854,7 @@ char leveldata[] =
 /*
  * Draw a sprite.
  */
-int DrawIMG(SDL_Surface *img, int x, int y) {
+void DrawIMG(SDL_Surface *img, int x, int y) {
 	SDL_Rect dest;
 	dest.x = x;
 	dest.y = y;
@@ -4872,25 +4870,23 @@ int Levels() {
 	k = -1;
 	l = 0;
 	while(leveldata[i]) {
-		// readline
-		if(leveldata[i++]!='\n') {
+		if(leveldata[i++]!='\n')
 			data[j++] = leveldata[i-1];
-		} else {
+		else {
 			data[j++] = '\n'; data[j++] = 0; j = 0;
 
-			// if a line contains text, it is the name for k:th levelset
+			/* if a line contains text, it is the name for k:th levelset */
 			if((data[0]>='A'&&data[0]<='Z')||(data[0]>='a'&&data[0]<='z')) {
-				// levelset of interest ended so return the number of levels
+				/* levelset of interest ended so return the number of levels */
 				if(k==set) return l;
 
-				// otherwise record the name of the beginning levelset
+				/* otherwise record the name of the beginning levelset */
 				sprintf(levelname, "%s ", data);
 				k++;
 			}
 
-			// if we're in the set we're looking for, count the number of levels
-			if(k==set && data[0]==' ' && data[1]=='\n')
-				l++;
+			/* if we're in the set we're looking for, count the number of levels */
+			if(k==set && data[0]==' ' && data[1]=='\n') l++;
 		}
 	}
 	return l;
@@ -4906,38 +4902,35 @@ int LoadLevel() {
 	l = -1;
 
 	while(leveldata[i]) {
-		// readline
-		if(leveldata[i++]!='\n') {
+		if(leveldata[i++]!='\n')
 			data[j++] = leveldata[i-1];
-		} else {
+		else {
 			data[j++] = '\n'; data[j++] = 0; j = 0;
 
-			// if a line contains text, it is the name for k:th levelset
-			if((data[0]>='A'&&data[0]<='Z')||(data[0]>='a'&&data[0]<='z'))
-				k++;
-			// if we're in the set we're looking for, start counting the levels
-			if(k==set && data[0]==' ' && data[1]=='\n')
-				l++;
+			/* if a line contains text, it is the name for k:th levelset */
+			if((data[0]>='A' && data[0]<='Z') || (data[0]>='a' && data[0]<='z')) k++;
+			/* if we're in the set we're looking for, start counting the levels */
+			if(k==set && data[0]==' ' && data[1]=='\n') l++;
 
-			// if we're in the set and level we're looking for, collect the level
+			/* if we're in the set and level we're looking for, collect the level */
 			if(k==set && l==sets[set]-1) {
 				k = i;
 
-				// clean the level
+				/* clean the level */
 				for(i=0; i<27*20; i++) level[i] = 0;
 				i = 0;
 				j = 0;
 
-				// if not at the end, keep collecting
+				/* if not at the end, keep collecting */
 				while(!((leveldata[k]=='\n')&&(leveldata[k+1]==' ')&&(leveldata[k+2]=='\n'))) {
-					if(leveldata[k++]!='\n')
-						level[i+++j*27] = leveldata[k-1];
+					if(leveldata[k++]!='\n') level[i+++j*27] = leveldata[k-1];
 					else {
-						j++; i=0;
+						j++;
+						i=0;
 					}
 				}
 
-				// find the location of our man
+				/* find the location of our man */
 				for(j=0; j<20; j++)
 					for(i=0; i<27; i++) {
 						if(level[i+j*27]=='@') { manx=i; many=j; }
@@ -4953,7 +4946,7 @@ int LoadLevel() {
 /*
  * Draw the level on screen.
  */
-int DrawLevel() {
+void DrawLevel() {
 	for(i=0; i<29; i++) {
 		DrawIMG(IMG_floor, 16*i, 0);
 		DrawIMG(IMG_floor, 16*i, 16*21);
@@ -4991,24 +4984,20 @@ int DrawLevel() {
 }
 
 /*
- * Save the progess to save.txt.
+ * Save the progess to sokoban.sav.
  */
-int Save() {
+void Save() {
 	stream = fopen("sokoban.sav", "w");
-	fseek(stream, -8, SEEK_END);
-	for(i=0; i<8; i++)
-		fputc(sets[i], stream);
+	for(i=0; i<8; i++) fputc(sets[i], stream);
 	fclose(stream);
 }
 
 /*
- * Load the progress from save.txt.
+ * Load the progress from sokoban.sav.
  */
-int Load() {
+void Load() {
 	stream = fopen("sokoban.sav", "r");
-	fseek(stream, -8, SEEK_END);
-	for(i=0; i<8; i++)
-		sets[i] = fgetc(stream);
+	for(i=0; i<8; i++) sets[i] = fgetc(stream);
 	LoadLevel();
 	levels = Levels();
 }
@@ -5016,13 +5005,11 @@ int Load() {
 /*
  * Load the level data, draw level and update window title to reflect progress and selected levelset.
  */
-int Change() {
+void Change() {
 	LoadLevel();
 	DrawLevel();
 	sprintf(fnttext, "%s[%d/%d]", levelname, sets[set]+1, levels = Levels());
-	for(i=0; i<256; i++)
-		if(fnttext[i]=='\r'||fnttext[i]=='\n')
-			fnttext[i] = ' ';
+	for(i=0; i<256; i++) if(fnttext[i]=='\r'||fnttext[i]=='\n') fnttext[i] = ' ';
         SDL_SetWindowTitle(window, fnttext);
 }
 
@@ -5075,16 +5062,13 @@ int Movement(int x, int y) {
 		if(level[manx-x+(many-y)*27]=='@') level[manx-x+(many-y)*27] = ' ';
 		liikuttiin = 0;
 		DrawLevel();
-		for(i=0; i<20*27; i++)
-			if(level[i]=='.'||level[i]=='+')
-				return 0;
-		sets[set]++;
+		for(i=0; i<20*27; i++) if(level[i]=='.'||level[i]=='+') return 0;
+		if(sets[set]<levels-1) sets[set]++;
 		Save();
 		Change();
 	}
 }
 
-//int SDL_main(int argc, char *argv[]) {
 int WinMain() {
 	SDL_Event event;
 	SDL_Init(SDL_INIT_VIDEO);
@@ -5094,8 +5078,7 @@ int WinMain() {
 	stream = fopen("sokoban.sav", "r");
 	if(stream==NULL) {
 		stream = fopen("sokoban.sav", "w");
-		for(i=0; i<8; i++)
-			fputc(0x00, stream);
+		for(i=0; i<8; i++) fputc(0x00, stream);
 		fclose(stream);
 	}
 
@@ -5126,9 +5109,19 @@ int WinMain() {
 				if(set<7) set++;
 				Change();
 				break;
+			case SDLK_9:
+				sets[set]--;
+				Save();
+				Change();
+				break;
+			case SDLK_0:
+				if(sets[set]<levels-1) sets[set]++;
+				Save();
+				Change();
+				break;
 			case SDLK_UP:
 				Movement(0, -1);
-			    break;
+				break;
 			case SDLK_DOWN:
 				Movement(0, 1);
 				break;
