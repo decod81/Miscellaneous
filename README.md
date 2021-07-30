@@ -8,7 +8,7 @@ Navier-Stokes fluid simulations, numerical simulations of the Schrödinger equat
 
 Other stuff:
 - FPGA softcore with DIY instruction set executing xorshift in while displaying on a VGA implementation
-- Custom assembler for my custom FPGA softcore (programmed in C)
+- Assembler for my custom FPGA softcore (programmed in C)
 - Arduino Nano interfacing with OLED display while rendering Mandelbrot fractals
 - Arbitrary precision mathematical functions
 - Remake of ksokoban using SDL2
