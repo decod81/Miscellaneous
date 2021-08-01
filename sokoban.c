@@ -5101,6 +5101,7 @@ int WinMain() {
 				if(set<7) set++;
 				Change();
 				break;
+/*
 			case SDLK_9:
 				if(sets[set]>0) sets[set]--;
 				Save();
@@ -5111,6 +5112,7 @@ int WinMain() {
 				Save();
 				Change();
 				break;
+*/
 			case SDLK_UP:
 				Movement(0, -1);
 				break;
