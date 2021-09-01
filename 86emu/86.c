@@ -74,13 +74,15 @@ unsigned char vgapal[] = {
 #define FLAGS_UPDATE_AO_ARITH 2
 #define FLAGS_UPDATE_OC_LOGIC 4
 
-#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, op_to_addr = rm_addr = i_mod < 3 ? (16 * regs16[seg_override_en ? seg_override : instructions[((scratch2_uint + 3)<<8)+i_rm]] + (unsigned short)( regs16[instructions[((scratch2_uint + 1)<<8)+i_rm]] + instructions[((scratch2_uint + 2)<<8)+i_rm] * i_data1 + regs16[instructions[(scratch2_uint<<8)+i_rm]])) : GET_REG_ADDR(i_rm), op_from_addr = GET_REG_ADDR(i_reg), i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
+#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, op_to_addr = rm_addr = i_mod < 3 ? SEGREG(seg_override_en ? seg_override : instructions[((scratch2_uint + 3)<<8)+i_rm], instructions[(scratch2_uint<<8)+i_rm], regs16[instructions[((scratch2_uint + 1)<<8)+i_rm]] + instructions[((scratch2_uint + 2)<<8)+i_rm] * i_data1+) : GET_REG_ADDR(i_rm), op_from_addr = GET_REG_ADDR(i_reg), i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
 
 #define GET_REG_ADDR(reg_id) (REGS_BASE + (i_w ? 2 * reg_id : 2 * reg_id + (reg_id >> 2) & 7))
 
 #define TOP_BIT 8*(i_w + 1)
 
 #define R_M_OP(dest,op,src) (i_w ? op_dest = *(unsigned short*)&dest, op_result = *(unsigned short*)&dest op (op_source = *(unsigned short*)&src) : (op_dest = dest, op_result = dest op (op_source = *(unsigned char*)&src)))
+
+#define SEGREG(reg_seg,reg_ofs,op) 16 * regs16[reg_seg] + (unsigned short)(op regs16[reg_ofs])
 
 #define SIGN_OF(a) (1 & (i_w ? *(short*)&a : a) >> (TOP_BIT - 1))
 
@@ -142,8 +144,6 @@ void set_opcode(unsigned char opcode)
 	set_flags_type = instructions[(TABLE_STD_FLAGS<<8)+opcode];
 }
 
-unsigned int dst, srce;
-
 char pc_interrupt(unsigned char interrupt_num)
 {
 	set_opcode(0xCD);
@@ -156,6 +156,11 @@ char pc_interrupt(unsigned char interrupt_num)
 	R_M_OP(reg_ip, =, mem[4 * interrupt_num]);
 
 	return regs8[FLAG_IF] = 0;
+}
+
+int AAA_AAS(char which_operation)
+{
+	return (regs16[REG_AX] += 262 * which_operation*set_AF(set_CF(((regs8[REG_AL] & 0x0F) > 9) || regs8[FLAG_AF])), regs8[REG_AL] &= 0x0F);
 }
 
 /*
@@ -446,7 +451,7 @@ int WinMain()
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					R_M_OP(mem[rm_addr], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
+					R_M_OP(mem[rm_addr], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
 				}
 				break;
 			case 11: // MOV AL/AX, [loc]
@@ -536,7 +541,7 @@ int WinMain()
 					else // CALL
 					{
 						i_w = 1;
-						R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, reg_ip);
+						R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, reg_ip);
 					}
 				}
 				if(i_d && i_w) reg_ip += (char)i_data0;
@@ -565,10 +570,14 @@ int WinMain()
 				while(scratch_uint>0)
 				{
 					scratch_uint--;
-					if(extra < 2) i = (regs16[REG_ES]<<4)+regs16[REG_DI];
-					else i = REGS_BASE;
-					if(extra & 1) j = REGS_BASE;
-					else j = (regs16[scratch2_uint]<<4)+regs16[REG_SI];
+					if(extra < 2)
+						i = SEGREG(REG_ES, REG_DI,);
+					else
+						i = REGS_BASE;
+					if(extra & 1)
+						j = REGS_BASE;
+					else
+						j = SEGREG(scratch2_uint, REG_SI,);
 					R_M_OP(mem[i], =, mem[j]);
 					if(!(extra & 1)) regs16[REG_SI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
 					if(!(extra & 2)) regs16[REG_DI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
@@ -586,8 +595,8 @@ int WinMain()
 					while(scratch_uint>0)
 					{
 						if(!rep_override_en) scratch_uint--;
-						if(extra) R_M_OP(mem[REGS_BASE], -, mem[(regs16[REG_ES]<<4)+regs16[REG_DI]]);
-						else R_M_OP(mem[(regs16[scratch2_uint]<<4)+regs16[REG_SI]], -, mem[(regs16[REG_ES]<<4)+regs16[REG_DI]]);
+						if(extra) R_M_OP(mem[REGS_BASE], -, mem[SEGREG(REG_ES, REG_DI,)]);
+						else R_M_OP(mem[SEGREG(scratch2_uint, REG_SI,)], -, mem[SEGREG(REG_ES, REG_DI,)]);
 						if(!extra) regs16[REG_SI] -= (2 * regs8[FLAG_DF] - 1)*(i_w + 1);
 						regs16[REG_DI] -= (2 * regs8[FLAG_DF] - 1)*(i_w + 1);
 						if(rep_override_en && !(--regs16[REG_CX] && (!op_result == rep_mode))) scratch_uint = 0;
@@ -600,18 +609,18 @@ int WinMain()
 				i_d = i_w;
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				R_M_OP(reg_ip, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);				
+				R_M_OP(reg_ip, =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
 				if(extra)
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					R_M_OP(regs16[REG_CS], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
+					R_M_OP(regs16[REG_CS], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
 				}
 				if(extra & 2)
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					set_flags(R_M_OP(scratch_uint, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]));
+					set_flags(R_M_OP(scratch_uint, =, mem[SEGREG(REG_SS, REG_SP, -2+)]));
 				}
 				else if(!i_d) regs16[REG_SP] += i_data0;
 				break;
@@ -619,8 +628,10 @@ int WinMain()
 				R_M_OP(mem[op_from_addr], =, i_data2);
 				break;
 			case 21: // IN AL/AX, DX/imm8
-				if(extra) scratch_uint = regs16[REG_DX];
-				else scratch_uint = (unsigned char)i_data0;
+				if(extra)
+					scratch_uint = regs16[REG_DX];
+				else
+					scratch_uint = (unsigned char)i_data0;
 				switch(scratch_uint)
 				{
 					case 0x60: // KBD
@@ -643,8 +654,10 @@ int WinMain()
 				R_M_OP(regs8[REG_AL], =, io_ports[scratch_uint]);
 				break;
 			case 22: // OUT DX/imm8, AL/AX
-				if(extra) scratch_uint = regs16[REG_DX];
-				else scratch_uint = (unsigned char)i_data0;
+				if(extra)
+					scratch_uint = regs16[REG_DX];
+				else
+					scratch_uint = (unsigned char)i_data0;
 				R_M_OP(io_ports[scratch_uint], =, regs8[REG_AL]);
 				switch(scratch_uint)
 				{
@@ -694,46 +707,40 @@ int WinMain()
 				break;
 			case 25: // PUSH reg
 				i_w = 1;
-				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, regs16[extra]);
+				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, regs16[extra]);
 				break;
 			case 26: // POP reg
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				R_M_OP(regs16[extra], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
+				R_M_OP(regs16[extra], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
 				break;
 			case 27:
 				seg_override_en = 2;
 				seg_override = extra;
 				if(rep_override_en) rep_override_en++;				
-				break;
+				break;	
 			case 30: // CBW
-				i = (char)regs8[REG_AL];
-				regs16[REG_AX] = (short)i;
+				regs8[REG_AH] = -SIGN_OF(regs8[REG_AL]);
 				break;
 			case 31: // CWD
-				if(regs16[REG_AX]<0)
-				{
-					regs16[REG_DX] = 0x8000;
-					regs16[REG_AX] &= 0x7FFF;
-				} else
-					regs16[REG_DX] = 0;
+				regs16[REG_DX] = -SIGN_OF(regs16[REG_AX]);
 				break;
 			case 32: // CALL FAR imm16:imm16
 				i_w = 1;
-				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, regs16[REG_CS]);
-				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, reg_ip + 5);
+				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, regs16[REG_CS]);
+				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, reg_ip + 5);
 				regs16[REG_CS] = i_data2;
 				reg_ip = i_data0;
 				break;
 			case 33: // PUSHF
 				make_flags();
 				i_w = 1;
-				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, scratch_uint);
+				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, scratch_uint);
 				break;
 			case 34: // POPF
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				set_flags(R_M_OP(scratch_uint, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]));
+				set_flags(R_M_OP(scratch_uint, =, mem[SEGREG(REG_SS, REG_SP, -2+)]));
 				break;
 			case 35: // SAHF
 				make_flags();
@@ -754,9 +761,9 @@ int WinMain()
 				reg_ip += 2;
 				pc_interrupt(i_data0);
 				break;
-			case 44: // XLAT				
-				if(seg_override_en) regs8[REG_AL] = mem[(regs16[seg_override]<<4)+regs8[REG_AL]+regs16[REG_BX]];				
-				else regs8[REG_AL] = mem[(regs16[REG_DS]<<4)+regs8[REG_AL]+regs16[REG_BX]];
+			case 44: // XLAT
+				if(seg_override_en) regs8[REG_AL] = mem[SEGREG(seg_override, REG_BX, regs8[REG_AL] +)];
+				else regs8[REG_AL] = mem[SEGREG(REG_DS, REG_BX, regs8[REG_AL] +)];
 				break;
 			case 45: // CMC
 				regs8[FLAG_CF] ^= 1;
