@@ -94,27 +94,6 @@ SDL_Color sdl_colors[256];
 SDL_Event sdl_event;
 unsigned char *disk;
 
-/*
-void R_M_OP_eq(dest, src)
-{
-	if(i_w)
-	{
-		op_dest = *(unsigned short*)&dest;
-		op_result = *(unsigned short*)&dest = (op_source = *(unsigned short*)&src);
-	}
-	else
-	{
-		op_dest = dest;
-		op_result = dest = (op_source = *(unsigned char*)&src));
-	}
-	*/
-	/*
-	(i_w ? 
-	op_dest = *(unsigned short*)&dest, op_result = *(unsigned short*)&dest op (op_source = *(unsigned short*)&src) :
-	(op_dest = dest, op_result = dest op (op_source = *(unsigned char*)&src)))
-	*/
-//}
-
 char set_CF(int new_CF)
 {
 	return regs8[FLAG_CF] = (new_CF!=0);
@@ -177,11 +156,6 @@ char pc_interrupt(unsigned char interrupt_num)
 	R_M_OP(reg_ip, =, mem[4 * interrupt_num]);
 
 	return regs8[FLAG_IF] = 0;
-}
-
-int AAA_AAS(char which_operation)
-{
-	return (regs16[REG_AX] += 262 * which_operation*set_AF(set_CF(((regs8[REG_AL] & 0x0F) > 9) || regs8[FLAG_AF])), regs8[REG_AL] &= 0x0F);
 }
 
 /*
@@ -591,14 +565,10 @@ int WinMain()
 				while(scratch_uint>0)
 				{
 					scratch_uint--;
-					if(extra < 2)
-						i = (regs16[REG_ES]<<4)+regs16[REG_DI];
-					else
-						i = REGS_BASE;
-					if(extra & 1)
-						j = REGS_BASE;
-					else
-						j = (regs16[scratch2_uint]<<4)+regs16[REG_SI];
+					if(extra < 2) i = (regs16[REG_ES]<<4)+regs16[REG_DI];
+					else i = REGS_BASE;
+					if(extra & 1) j = REGS_BASE;
+					else j = (regs16[scratch2_uint]<<4)+regs16[REG_SI];
 					R_M_OP(mem[i], =, mem[j]);
 					if(!(extra & 1)) regs16[REG_SI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
 					if(!(extra & 2)) regs16[REG_DI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
@@ -649,10 +619,8 @@ int WinMain()
 				R_M_OP(mem[op_from_addr], =, i_data2);
 				break;
 			case 21: // IN AL/AX, DX/imm8
-				if(extra)
-					scratch_uint = regs16[REG_DX];
-				else
-					scratch_uint = (unsigned char)i_data0;
+				if(extra) scratch_uint = regs16[REG_DX];
+				else scratch_uint = (unsigned char)i_data0;
 				switch(scratch_uint)
 				{
 					case 0x60: // KBD
@@ -675,10 +643,8 @@ int WinMain()
 				R_M_OP(regs8[REG_AL], =, io_ports[scratch_uint]);
 				break;
 			case 22: // OUT DX/imm8, AL/AX
-				if(extra)
-					scratch_uint = regs16[REG_DX];
-				else
-					scratch_uint = (unsigned char)i_data0;
+				if(extra) scratch_uint = regs16[REG_DX];
+				else scratch_uint = (unsigned char)i_data0;
 				R_M_OP(io_ports[scratch_uint], =, regs8[REG_AL]);
 				switch(scratch_uint)
 				{
@@ -739,12 +705,18 @@ int WinMain()
 				seg_override_en = 2;
 				seg_override = extra;
 				if(rep_override_en) rep_override_en++;				
-				break;	
+				break;
 			case 30: // CBW
-				regs8[REG_AH] = -SIGN_OF(regs8[REG_AL]);
+				i = (char)regs8[REG_AL];
+				regs16[REG_AX] = (short)i;
 				break;
 			case 31: // CWD
-				regs16[REG_DX] = -SIGN_OF(regs16[REG_AX]);
+				if(regs16[REG_AX]<0)
+				{
+					regs16[REG_DX] = 0x8000;
+					regs16[REG_AX] &= 0x7FFF;
+				} else
+					regs16[REG_DX] = 0;
 				break;
 			case 32: // CALL FAR imm16:imm16
 				i_w = 1;
