@@ -1,13 +1,17 @@
-	cpu	8086
-	times 512 db 0
+	cpu     8086
+	org     0xf000
+
+;;;; BLANK INTERRUPT ;;;;
+
+	iret
 
 ;;;; FILL INTERRUPT VECTOR TABLE ;;;;
 
 	mov     ax, cs
-	mov     cx, 0x3f
+	mov     cx, 0x7f
 	rep     stosw
 
-	mov     word [es:0x08*4], INT08 ; TIMER
+	mov     word [es:0x08*4], INT08 ; TIMER	
 	mov     word [es:0x09*4], INT09 ; KEYBOARD HW
 	mov     word [es:0x10*4], INT10 ; VIDEO
 	mov     word [es:0x12*4], INT12 ; MEMORY
@@ -68,7 +72,7 @@ INT08:
 	pop     ds
 	iret
 
-;;;; KEYBOARD ;;;;
+;;;; KEYBOARD HW ;;;;
 
 INT09:
 	push	ax
@@ -194,7 +198,7 @@ ASCII:
 	db      0   ; 37
 	db      0   ; 38
 	db      ' ' ; 39 <SPACE>
-	times   64 db 0
+	times 64 db 0
 
 ;;;; VIDEO ;;;;
 
@@ -203,12 +207,46 @@ INT10:
 	je      INT10_setmode
 	cmp     ah, 0x0e
 	je      INT10_putchar
+	cmp     ax, 0x1010
+	je      INT10_set_palette
+	cmp     ax, 0x1015
+	je      INT10_get_palette
+	dw		0x040f
+	mov		al, 0x1a
+	mov		bx, 8
 	iret
 INT10_setmode:
 	dw      0x030f
 	iret
 INT10_putchar:
 	dw      0x000f
+	iret
+INT10_set_palette:
+	mov     ah, dh
+	mov		dx, 0x3c8
+	mov		al, bl
+	out		dx, al
+	inc		dx
+	mov     al, ah
+	out     dx, al
+	mov     al, ch
+	out     dx, al
+	mov     al, cl
+	out     dx, al
+	iret
+INT10_get_palette:
+	mov     dx, 0x3c7
+	mov     al, bl
+	out     dx, al
+	inc     dx
+	inc     dx
+	in      al, dx
+	mov     ah, al	
+	in      al, dx
+	mov     ch, al
+	in      al, dx
+	mov     cl, al
+	mov     dh, ah
 	iret
 
 ;;;; CONVENTIONAL MEMORY ;;;;
@@ -228,12 +266,12 @@ INT13:
 INT13_read_disk:
 	dw      0x020f
 	iret
-INT13_disk_type:
-	mov     cx, 0x3051
-	mov     dx, 0x0301
+INT13_disk_type: ; CHS: 511/16/63
+	mov     cx, 0xfd7f
+	mov     dx, 0x0f01
 	iret
 
-;;;; KEYBOARD ;;;;
+;;;; KEYBOARD SW ;;;;
 
 INT16:
 	push	ds
@@ -285,12 +323,8 @@ INT1A:
 	pop     ax
 	iret
 
-;;;; ;;;;
+;;;; RESET VECTOR ;;;;
 
-	times	0xf000-($-$$) db 0
-blank:
-	iret
-
-	times	0xfff0-($-$$) db 0
-	jmp     0xf000:0x100
-	times   11 db 0xff
+	times	0xff0-($-$$) db 0
+	jmp     0xf000:0xf001
+	times   0x1000-($-$$) db 0xff
