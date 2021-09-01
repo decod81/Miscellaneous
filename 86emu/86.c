@@ -74,7 +74,9 @@ unsigned char vgapal[] = {
 #define FLAGS_UPDATE_AO_ARITH 2
 #define FLAGS_UPDATE_OC_LOGIC 4
 
-#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, op_to_addr = rm_addr = i_mod < 3 ? SEGREG(seg_override_en ? seg_override : instructions[((scratch2_uint + 3)<<8)+i_rm], instructions[(scratch2_uint<<8)+i_rm], regs16[instructions[((scratch2_uint + 1)<<8)+i_rm]] + instructions[((scratch2_uint + 2)<<8)+i_rm] * i_data1+) : GET_REG_ADDR(i_rm), op_from_addr = GET_REG_ADDR(i_reg), i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
+//#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, op_to_addr = rm_addr = i_mod < 3 ? SEGREG(seg_override_en ? seg_override : instructions[((scratch2_uint + 3)<<8)+i_rm], instructions[(scratch2_uint<<8)+i_rm], regs16[instructions[((scratch2_uint + 1)<<8)+i_rm]] + instructions[((scratch2_uint + 2)<<8)+i_rm] * i_data1+) : GET_REG_ADDR(i_rm), op_from_addr = GET_REG_ADDR(i_reg), i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
+
+#define DECODE_RM_REG scratch2_uint = 4 * !i_mod, op_to_addr = rm_addr = i_mod < 3 ? (16 * regs16[seg_override_en ? seg_override : instructions[((scratch2_uint + 3)<<8)+i_rm]] + (unsigned short)( regs16[instructions[((scratch2_uint + 1)<<8)+i_rm]] + instructions[((scratch2_uint + 2)<<8)+i_rm] * i_data1 + regs16[instructions[(scratch2_uint<<8)+i_rm]])) : GET_REG_ADDR(i_rm), op_from_addr = GET_REG_ADDR(i_reg), i_d && (scratch_uint = op_from_addr, op_from_addr = rm_addr, op_to_addr = scratch_uint)
 
 #define GET_REG_ADDR(reg_id) (REGS_BASE + (i_w ? 2 * reg_id : 2 * reg_id + (reg_id >> 2) & 7))
 
@@ -82,7 +84,7 @@ unsigned char vgapal[] = {
 
 #define R_M_OP(dest,op,src) (i_w ? op_dest = *(unsigned short*)&dest, op_result = *(unsigned short*)&dest op (op_source = *(unsigned short*)&src) : (op_dest = dest, op_result = dest op (op_source = *(unsigned char*)&src)))
 
-#define SEGREG(reg_seg,reg_ofs,op) 16 * regs16[reg_seg] + (unsigned short)(op regs16[reg_ofs])
+//#define SEGREG(reg_seg,reg_ofs,op) 16 * regs16[reg_seg] + (unsigned short)(op regs16[reg_ofs])
 
 #define SIGN_OF(a) (1 & (i_w ? *(short*)&a : a) >> (TOP_BIT - 1))
 
@@ -158,10 +160,12 @@ char pc_interrupt(unsigned char interrupt_num)
 	return regs8[FLAG_IF] = 0;
 }
 
+/*
 int AAA_AAS(char which_operation)
 {
 	return (regs16[REG_AX] += 262 * which_operation*set_AF(set_CF(((regs8[REG_AL] & 0x0F) > 9) || regs8[FLAG_AF])), regs8[REG_AL] &= 0x0F);
 }
+*/
 
 /*
 void audio_callback(void *data, unsigned char *stream, int len)
@@ -451,7 +455,7 @@ int WinMain()
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					R_M_OP(mem[rm_addr], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
+					R_M_OP(mem[rm_addr], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
 				}
 				break;
 			case 11: // MOV AL/AX, [loc]
@@ -541,7 +545,7 @@ int WinMain()
 					else // CALL
 					{
 						i_w = 1;
-						R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, reg_ip);
+						R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, reg_ip);
 					}
 				}
 				if(i_d && i_w) reg_ip += (char)i_data0;
@@ -571,13 +575,13 @@ int WinMain()
 				{
 					scratch_uint--;
 					if(extra < 2)
-						i = SEGREG(REG_ES, REG_DI,);
+						i = (regs16[REG_ES]<<4)+regs16[REG_DI];
 					else
 						i = REGS_BASE;
 					if(extra & 1)
 						j = REGS_BASE;
 					else
-						j = SEGREG(scratch2_uint, REG_SI,);
+						j = (regs16[scratch2_uint]<<4)+regs16[REG_SI];
 					R_M_OP(mem[i], =, mem[j]);
 					if(!(extra & 1)) regs16[REG_SI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
 					if(!(extra & 2)) regs16[REG_DI] -= ((regs8[FLAG_DF] << 1) - 1)*(i_w + 1);
@@ -595,8 +599,8 @@ int WinMain()
 					while(scratch_uint>0)
 					{
 						if(!rep_override_en) scratch_uint--;
-						if(extra) R_M_OP(mem[REGS_BASE], -, mem[SEGREG(REG_ES, REG_DI,)]);
-						else R_M_OP(mem[SEGREG(scratch2_uint, REG_SI,)], -, mem[SEGREG(REG_ES, REG_DI,)]);
+						if(extra) R_M_OP(mem[REGS_BASE], -, mem[(regs16[REG_ES]<<4)+regs16[REG_DI]]);
+						else R_M_OP(mem[(regs16[scratch2_uint]<<4)+regs16[REG_SI]], -, mem[(regs16[REG_ES]<<4)+regs16[REG_DI]]);
 						if(!extra) regs16[REG_SI] -= (2 * regs8[FLAG_DF] - 1)*(i_w + 1);
 						regs16[REG_DI] -= (2 * regs8[FLAG_DF] - 1)*(i_w + 1);
 						if(rep_override_en && !(--regs16[REG_CX] && (!op_result == rep_mode))) scratch_uint = 0;
@@ -609,18 +613,18 @@ int WinMain()
 				i_d = i_w;
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				R_M_OP(reg_ip, =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
+				R_M_OP(reg_ip, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);				
 				if(extra)
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					R_M_OP(regs16[REG_CS], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
+					R_M_OP(regs16[REG_CS], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
 				}
 				if(extra & 2)
 				{
 					i_w = 1;
 					regs16[REG_SP] += 2;
-					set_flags(R_M_OP(scratch_uint, =, mem[SEGREG(REG_SS, REG_SP, -2+)]));
+					set_flags(R_M_OP(scratch_uint, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]));
 				}
 				else if(!i_d) regs16[REG_SP] += i_data0;
 				break;
@@ -707,12 +711,12 @@ int WinMain()
 				break;
 			case 25: // PUSH reg
 				i_w = 1;
-				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, regs16[extra]);
+				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, regs16[extra]);
 				break;
 			case 26: // POP reg
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				R_M_OP(regs16[extra], =, mem[SEGREG(REG_SS, REG_SP, -2+)]);
+				R_M_OP(regs16[extra], =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]);
 				break;
 			case 27:
 				seg_override_en = 2;
@@ -727,20 +731,20 @@ int WinMain()
 				break;
 			case 32: // CALL FAR imm16:imm16
 				i_w = 1;
-				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, regs16[REG_CS]);
-				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, reg_ip + 5);
+				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, regs16[REG_CS]);
+				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, reg_ip + 5);
 				regs16[REG_CS] = i_data2;
 				reg_ip = i_data0;
 				break;
 			case 33: // PUSHF
 				make_flags();
 				i_w = 1;
-				R_M_OP(mem[SEGREG(REG_SS, REG_SP, --)], =, scratch_uint);
+				R_M_OP(mem[(regs16[REG_SS]<<4)+--regs16[REG_SP]], =, scratch_uint);
 				break;
 			case 34: // POPF
 				i_w = 1;
 				regs16[REG_SP] += 2;
-				set_flags(R_M_OP(scratch_uint, =, mem[SEGREG(REG_SS, REG_SP, -2+)]));
+				set_flags(R_M_OP(scratch_uint, =, mem[(regs16[REG_SS]<<4)-2+regs16[REG_SP]]));
 				break;
 			case 35: // SAHF
 				make_flags();
@@ -761,9 +765,9 @@ int WinMain()
 				reg_ip += 2;
 				pc_interrupt(i_data0);
 				break;
-			case 44: // XLAT
-				if(seg_override_en) regs8[REG_AL] = mem[SEGREG(seg_override, REG_BX, regs8[REG_AL] +)];
-				else regs8[REG_AL] = mem[SEGREG(REG_DS, REG_BX, regs8[REG_AL] +)];
+			case 44: // XLAT				
+				if(seg_override_en) regs8[REG_AL] = mem[(regs16[seg_override]<<4)+regs8[REG_AL]+regs16[REG_BX]];				
+				else regs8[REG_AL] = mem[(regs16[REG_DS]<<4)+regs8[REG_AL]+regs16[REG_BX]];
 				break;
 			case 45: // CMC
 				regs8[FLAG_CF] ^= 1;
@@ -808,7 +812,7 @@ int WinMain()
 						break;
 					case 4:
 						if(regs8[REG_AH]!=0x0e)
-							printf("%.8d Unhandled video request: ah=%.2x, al=%.2x, bx=%.4x, cx=%.4x, dx=%.4x\n", msgc++, regs8[REG_AH], regs8[REG_AL], regs16[REG_BX], regs16[REG_CX], regs16[REG_DX]);
+							printf("%.8d Unhandled video request: ah=%.2x, al=%.2x\n", msgc++, regs8[REG_AH], regs8[REG_AL]);
 						break;
 				}
 				break;
